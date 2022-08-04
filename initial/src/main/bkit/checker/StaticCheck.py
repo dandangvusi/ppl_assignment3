@@ -38,6 +38,7 @@ class ArrayType(Type):
 
 @dataclass
 class MType:
+    is_func: bool
     intype:List[Type]
     restype:Type
 
@@ -49,24 +50,29 @@ class Symbol:
 class StaticChecker(BaseVisitor):
     def __init__(self,ast):
         self.ast = ast
-        self.global_envi = [
-            Symbol("int_of_float",MType([FloatType()],IntType())),
-            Symbol("float_of_int",MType([IntType()],FloatType())),
-            Symbol("int_of_string",MType([StringType()],IntType())),
-            Symbol("string_of_int",MType([IntType()],StringType())),
-            Symbol("float_of_string",MType([StringType()],FloatType())),
-            Symbol("string_of_float",MType([FloatType()],StringType())),
-            Symbol("bool_of_string",MType([StringType()],BoolType())),
-            Symbol("string_of_bool",MType([BoolType()],StringType())),
-            Symbol("read",MType([],StringType())),
-            Symbol("printLn",MType([],VoidType())),
-            Symbol("printStr",MType([StringType()],VoidType())),
-            Symbol("printStrLn",MType([StringType()],VoidType()))]
+        self.global_envi = [dict()]
+        builtin_func = {
+            "int_of_float": MType(True, [FloatType()], IntType()),
+            "float_of_int": MType(True, [IntType()], FloatType()),
+            "int_of_string": MType(True, [StringType()], IntType()),
+            "string_of_int": MType(True, [IntType()], StringType()),
+            "float_of_string": MType(True, [StringType()], FloatType()),
+            "string_of_float": MType(True, [FloatType()], StringType()),
+            "bool_of_string": MType(True, [StringType()], BoolType()),
+            "string_of_bool": MType(True, [BoolType()], StringType()),
+            "read": MType(True, [], StringType()),
+            "printLn": MType(True, [], VoidType()),
+            "printStr": MType(True, [StringType()], VoidType()),
+            "printStrLn": MType(True, [StringType()], VoidType())}
+        self.global_envi.append(builtin_func)
    
     def check(self):
         return self.visit(self.ast,self.global_envi)
 
-    def visitProgram(self,ast, o):
+    def visitProgram(self,ast, global_envi):
+        # Check redeclared
+        for decl in ast.decl:
+            self.visit(decl, global_envi)
         # Check main function
         is_main_func_defined = False
         for decl in ast.decl:
@@ -75,96 +81,133 @@ class StaticChecker(BaseVisitor):
                 break
         if not is_main_func_defined:
             raise NoEntryPoint()
-        # Check redeclared
-
 
     # Visit Function declaration
-    def visitFuncDecl(self, ast, o):
-        if ast.name.name in o[0]:
-            raise Redeclared(Function(),ast.name.name)
-        param_type = [dict()]
+    def visitFuncDecl(self, ast, global_envi):
+        # Check redeclared function name
+        if ast.name.name in global_envi[0]:
+            raise Redeclared(Function(), ast.name.name)
         local_decl = [dict()]
+        param_list = [dict()]
+        # Check redeclared param
         for param in ast.param:
-            self.visit(param, param_type)
+            if param.variable.name in param_list:
+                raise Redeclared(Parameter(), param.variable.name)
+            else:
+                param_type = Unknown()
+                param_name = param.variable.name
+                param_list[0][param_name] = MType(False, None, param_type)
+                local_decl[0][param_name] = MType(False, None, param_type)
+        # Check redeclared local variable
         for decl in ast.body[0]:
-            self.visit(decl, local_decl)
-        local_env = param_type + local_decl
+            if decl.variable.name in local_decl[0]:
+                raise Redeclared(Variable(), decl.variable.name)
+            else:
+                var_type = self.visit(decl.varInit)
+                var_name = decl.variable.name
+                local_decl[0][var_name] = MType(False, None, var_type)
+        rtn_type = Unknown()
+        new_envi = local_decl + global_envi
+        # Visit statements
         for stmt in ast.body[1]:
-            self.visit(stmt, local_env)
-        o[0][ast.name.name] = local_env[0]
+            if isinstance(stmt, Return):
+                rtn_type = self.visit(stmt.expr)
+            else:
+                self.visit(stmt, new_envi)
+        # Add function to environment
+        intype = []
+        for param in ast.param:
+            intype.append(Unknown)
+        global_envi[0][ast.name.name] = MType(True, intype, rtn_type)
 
     # Visit variable declaration
     def visitVarDecl(self, ast, o):
+        # Check redeclared
         if ast.variable.name in o[0]:
-            raise Redeclared(Variable(),ast.variable.name)
+            raise Redeclared(Variable(), ast.variable.name)
         # composite variable
         if len(ast.varDimen) != 0:
-            if ast.varInit is not None:
-                o[0][ast.variable.name] = self.visit(ast.varInit)
-            else:
-                o[0][ast.variable.name] = Unknown()
+            var_type = ArrayType()
+            var_name = ast.variable.name
+            o[0][var_name] = MType(False, None, var_type)
         # scalar variable
         else:
             if ast.varInit is not None:
-                o[0][ast.variable.name] = self.visit(ast.varInit)
+                var_type = self.visit(ast.varInit)
+                var_name = ast.variable.name
+                o[0][var_name] = MType(False, None, var_type)
             else:
-                o[0][ast.variable.name] = Unknown()
+                var_type = Unknown()
+                var_name = ast.variable.name
+                o[0][var_name] = MType(False, None, var_type)
 
     # Visit Assignment statement
     def visitAssign(self, ast, o):
         lhs = self.visit(ast.lhs, o)
         rhs = self.visit(ast.rhs, o)
         # Both sides can not be resolve -> raise exception
-        if isinstance(lhs, Unknown) and isinstance(rhs, Unknown):
+        if isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
             raise TypeCannotBeInferred(ast)
         # Type infer
-        elif isinstance(lhs, Unknown) and not isinstance(rhs, Unknown):
+        elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
             for env in o:
                 if ast.lhs.name.name in env:
                     env[ast.lhs.name.name] = rhs
                     break
-        elif not isinstance(lhs, Unknown) and isinstance(rhs, Unknown):
+        elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
             for env in o:
                 if ast.rhs.name.name in env:
                     env[ast.rhs.name.name] = lhs
                     break
         # Both sides must be the same in type
-        elif lhs != rhs:
+        elif lhs.restype != rhs.restype:
             raise TypeMismatchInStatement(ast)
 
     # Visit Function call statement
     def visitCallStmt(self, ast, o):
-        isFunction = False
-        param_type = dict()
+        is_function = False
+        param_type = []
         args_type = []
         for env in o:
-            if ast.method.name in env and isinstance(env[ast.method.name], dict):
-                isFunction = True
-                param_type = env[ast.method.name]
+            if ast.method.name in env and env[ast.method.name].is_func:
+                is_function = True
+                param_type = env[ast.method.name].intype
                 break
         for arg in ast.param:
             args_type.append(self.visit(arg, o))
-        if isFunction == False:
+        # Check undeclared function
+        if not is_function:
             raise Undeclared(Function(),ast.method.name)
         # number of passed arguments and number of params must be the same
         if len(args_type) != len(param_type):
             raise TypeMismatchInStatement(ast)
-        param_type_vals = param_type.values()
-        param_type_names = param_type.keys()
-        for i in range(len(param_type_vals)):
+        # Check param types and argument type
+        infer_param_type = False
+        for i in range(len(param_type)):
             # If there is exists at least one type-unresolved parameter, raise TypeCannotBeInferred() for call statement
-            if isinstance(args_type[i], Unknown):
+            if isinstance(args_type[i].restype, Unknown):
                 raise TypeCannotBeInferred(ast)
-            elif not isinstance(args_type[i], Unknown):
-                param_type[param_type_names[i]] = args_type[i]
+            # Param type infer
+            elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i].restype, Unknown):
+                param_type[i] = args_type[i]
+                infer_param_type = True
             # Type of argument and associative param must be the same
-            elif param_type_vals[i] != args_type[i]:
+            elif param_type[i].restype != args_type[i].restype:
                 raise TypeMismatchInStatement(ast)
+        # Update param type list of function in environment
+        if infer_param_type:
+            for env in o:
+                if ast.method.name in env and env[ast.method.name].is_func:
+                    env[ast.method.name].intype = param_type
+                    break
 
 
 
     # Visit binary expression
     def visitBinaryOp(self, ast, o):
+        if ast.op in ["+", "-", "*", "\\", "%"]:
+            pass
+
         if ast.op in ["+", "-", "*","\\","%"]:
             if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = IntType()
             if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = IntType()
@@ -211,23 +254,39 @@ class StaticChecker(BaseVisitor):
             if not isinstance(self.visit(ast.body, o), BoolType): raise TypeMismatchInExpression(ast)
             return BoolType()
 
+    # Visit array cell
+    def visitArrayCell(self, ast, o):
+        arr = self.visit(ast.arr)
+        if not isinstance(arr, ArrayType):
+            raise TypeMismatchInExpression(ast)
+        for arr_index in ast.idx:
+            index_type = self.visit(arr_index)
+            if not isinstance(index_type, IntType):
+                raise TypeMismatchInExpression(ast)
+
     # Visit literals -> return type of literal
     def visitIntLiteral(self, ast, o):
-        return IntType()
+        typ = MType(None, None, IntType())
+        return typ
+
     def visitFloatLiteral(self, ast, o):
-        return FloatType()
+        typ = MType(None, None, FloatType())
+        return typ
 
     def visitStringLiteral(self, ast, o):
-        return StringType()
+        typ = MType(None, None, StringType())
+        return typ
 
     def visitBooleanLiteral(self, ast, o):
-        return BoolType()
+        typ = MType(None, None, BoolType())
+        return typ
 
     def visitArrayLiteral(self, ast, o):
-        return ArrayType()
+        typ = MType(None, None, ArrayType())
+        return typ
     # visit Id, if declared -> return inferred Id type, if not -> raise exception
     def visitId(self, ast, o):
         for env in o:
-            if ast.name.name in env and not isinstance(env[ast.name.name], dict):
+            if ast.name.name in env and not env[ast.name.name].is_func:
                 return env[ast.name.name]
         raise Undeclared(Identifier(), ast.name.name)
