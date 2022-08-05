@@ -168,10 +168,12 @@ class StaticChecker(BaseVisitor):
         is_function = False
         param_type = []
         args_type = []
+        rtn_type = None
         for env in o:
             if ast.method.name in env and env[ast.method.name].is_func:
                 is_function = True
                 param_type = env[ast.method.name].intype
+                rtn_type = env[ast.method.name]
                 break
         for arg in ast.param:
             args_type.append(self.visit(arg, o))
@@ -200,68 +202,122 @@ class StaticChecker(BaseVisitor):
                 if ast.method.name in env and env[ast.method.name].is_func:
                     env[ast.method.name].intype = param_type
                     break
-
-
+        return rtn_type
 
     # Visit binary expression
     def visitBinaryOp(self, ast, o):
+        left = self.visit(ast.left, o)
+        right = self.visit(ast.right, o)
         if ast.op in ["+", "-", "*", "\\", "%"]:
-            pass
-
-        if ast.op in ["+", "-", "*","\\","%"]:
-            if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = IntType()
-            if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = IntType()
-            if not isinstance(self.visit(ast.left, o), IntType): raise TypeMismatchInExpression(ast)
-            elif not isinstance(self.visit(ast.right, o), IntType): raise TypeMismatchInExpression(ast)
-            return IntType()
+            # Id
+            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, IntType()))
+            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, IntType()))
+            # Funcall
+            if left.is_func and isinstance(left.restype, Unknown):
+                left.restype = IntType()
+                self.type_infer_func(ast.left.name, o, left)
+            if right.is_func and isinstance(right.restype, Unknown):
+                right.restype = IntType()
+                self.type_infer_func(ast.right.name, o, right)
+            if not isinstance(left.restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(right.restype, IntType): raise TypeMismatchInExpression(ast)
+            return MType(None, None, IntType())
         elif ast.op in ["+.", "-.", "*.","\."]:
-            if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = FloatType()
-            if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = FloatType()
-            if not isinstance(self.visit(ast.left, o), FloatType): raise TypeMismatchInExpression(ast)
-            elif not isinstance(self.visit(ast.right, o), FloatType): raise TypeMismatchInExpression(ast)
-            return FloatType()
+            # Id
+            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, FloatType()))
+            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, FloatType()))
+            # Funcall
+            if left.is_func and isinstance(left.restype, Unknown):
+                left.restype = FloatType()
+                self.type_infer_func(ast.left.name, o, left)
+            if right.is_func and isinstance(right.restype, Unknown):
+                right.restype = FloatType()
+                self.type_infer_func(ast.right.name, o, right)
+            if not isinstance(left.restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(right.restype, FloatType): raise TypeMismatchInExpression(ast)
+            MType(None, None, FloatType())
         elif ast.op in ["==", "!=", "<",">","<=", ">="]:
-            if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = IntType()
-            if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = IntType()
-            if not isinstance(self.visit(ast.left, o), IntType): raise TypeMismatchInExpression(ast)
-            elif not isinstance(self.visit(ast.right, o), IntType): raise TypeMismatchInExpression(ast)
-            return BoolType()
+            # Id
+            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, IntType()))
+            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, IntType()))
+            # Funcall
+            if left.is_func and isinstance(left.restype, Unknown):
+                left.restype = IntType()
+                self.type_infer_func(ast.left.name, o, left)
+            if right.is_func and isinstance(right.restype, Unknown):
+                right.restype = IntType()
+                self.type_infer_func(ast.right.name, o, right)
+            if not isinstance(left.restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(right.restype, IntType): raise TypeMismatchInExpression(ast)
+            return MType(None, None, BoolType())
         elif ast.op in ["=/=", "<.", ">.","<=.", ">=."]:
-            if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = FloatType()
-            if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = FloatType()
-            if not isinstance(self.visit(ast.left, o), FloatType): raise TypeMismatchInExpression(ast)
-            elif not isinstance(self.visit(ast.right, o), FloatType): raise TypeMismatchInExpression(ast)
-            return BoolType()
+            # Id
+            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, FloatType()))
+            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, FloatType()))
+            # Funcall
+            if left.is_func and isinstance(left.restype, Unknown):
+                left.restype = FloatType()
+                self.type_infer_func(ast.left.name, o, left)
+            if right.is_func and isinstance(right.restype, Unknown):
+                right.restype = FloatType()
+                self.type_infer_func(ast.right.name, o, right)
+            if not isinstance(left.restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(right.restype, FloatType): raise TypeMismatchInExpression(ast)
+            MType(None, None, BoolType())
         elif ast.op in ["&&", "||"]:
-            if isinstance(self.visit(ast.left, o), Unknown): o[0][ast.left.name] = BoolType()
-            if isinstance(self.visit(ast.right, o), Unknown): o[0][ast.right.name] = BoolType()
-            if not isinstance(self.visit(ast.left, o), BoolType): raise TypeMismatchInExpression(ast)
-            elif not isinstance(self.visit(ast.right, o), BoolType): raise TypeMismatchInExpression(ast)
-            return BoolType()
+            # Id
+            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, BoolType()))
+            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, BoolType()))
+            # Funcall
+            if left.is_func and isinstance(left.restype, Unknown):
+                left.restype = BoolType()
+                self.type_infer_func(ast.left.name, o, left)
+            if right.is_func and isinstance(right.restype, Unknown):
+                right.restype = BoolType()
+                self.type_infer_func(ast.right.name, o, right)
+            if not isinstance(left.restype, BoolType): raise TypeMismatchInExpression(ast)
+            if not isinstance(right.restype, BoolType): raise TypeMismatchInExpression(ast)
+            MType(None, None, BoolType())
 
     # Visit Unary expression
     def visitUnaryOp(self, ast, o):
+        body = self.visit(ast.body, o)
         if ast.op in ["-"]:
-            if isinstance(self.visit(ast.body, o), Unknown): o[0][ast.body.name] = IntType()
-            if not isinstance(self.visit(ast.body, o), IntType): raise TypeMismatchInExpression(ast)
-            return IntType()
+            # Id
+            if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, IntType()))
+            # Funcall
+            if body.is_func and isinstance(body.restype, Unknown):
+                body.restype = IntType()
+                self.type_infer_func(ast.body.name, o, body)
+            if not isinstance(body.restype, IntType): raise TypeMismatchInExpression(ast)
+            return MType(None, None, IntType())
         elif ast.op in ["-."]:
-            if isinstance(self.visit(ast.body, o), Unknown): o[0][ast.body.name] = FloatType()
-            if not isinstance(self.visit(ast.body, o), FloatType): raise TypeMismatchInExpression(ast)
-            return FloatType()
+            # Id
+            if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, FloatType()))
+            # Funcall
+            if body.is_func and isinstance(body.restype, Unknown):
+                body.restype = FloatType()
+                self.type_infer_func(ast.body.name, o, body)
+            if not isinstance(body.restype, FloatType): raise TypeMismatchInExpression(ast)
+            return MType(None, None, FloatType())
         elif ast.op in ["!"]:
-            if isinstance(self.visit(ast.body, o), Unknown): o[0][ast.body.name] = BoolType()
-            if not isinstance(self.visit(ast.body, o), BoolType): raise TypeMismatchInExpression(ast)
-            return BoolType()
+            # Id
+            if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, BoolType()))
+            # Funcall
+            if body.is_func and isinstance(body.restype, Unknown):
+                body.restype = BoolType()
+                self.type_infer_func(ast.body.name, o, body)
+            if not isinstance(body.restype, BoolType): raise TypeMismatchInExpression(ast)
+            return MType(None, None, BoolType())
 
     # Visit array cell
     def visitArrayCell(self, ast, o):
         arr = self.visit(ast.arr)
-        if not isinstance(arr, ArrayType):
+        if not isinstance(arr.restype, ArrayType):
             raise TypeMismatchInExpression(ast)
         for arr_index in ast.idx:
             index_type = self.visit(arr_index)
-            if not isinstance(index_type, IntType):
+            if not isinstance(index_type.restype, IntType):
                 raise TypeMismatchInExpression(ast)
 
     # Visit literals -> return type of literal
@@ -290,3 +346,15 @@ class StaticChecker(BaseVisitor):
             if ast.name.name in env and not env[ast.name.name].is_func:
                 return env[ast.name.name]
         raise Undeclared(Identifier(), ast.name.name)
+
+    # Infer type for identifier
+    def type_infer_id(self, id_name, env, id_type):
+        for e in env:
+            if id_name in e:
+                e[id_name] = id_type
+
+    # Infer type for identifier
+    def type_infer_func(self, func_name, env, func_type):
+        for e in env:
+            if func_name in e:
+                e[func_name] = func_type
