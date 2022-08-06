@@ -1,1 +1,1 @@
-Program([FuncDecl(Id(main)[],([][CallStmt(Id(printStrLn),[CallExpr(Id(read),[IntLiteral(4)])])]))])
+Program([FuncDecl(Id(add_one)[VarDecl(Id(n))],([][Return(BinaryOp(+,Id(n),IntLiteral(1)))]))])

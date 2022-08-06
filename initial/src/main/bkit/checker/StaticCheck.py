@@ -117,7 +117,7 @@ class StaticChecker(BaseVisitor):
         # Visit statements
         for stmt in ast.body[1]:
             if isinstance(stmt, Return):
-                rtn_type = self.visit(stmt.expr)
+                rtn_type = self.visit(stmt.expr, new_envi)
             else:
                 self.visit(stmt, new_envi)
         # Add function to environment
@@ -163,8 +163,10 @@ class StaticChecker(BaseVisitor):
         right = self.visit(ast.right, o)
         if ast.op in ["+", "-", "*", "\\", "%"]:
             # Id
-            if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, IntType()))
-            if not right.is_func and isinstance(right.restype, Unknown): self.type_infer_id(ast.right.name, o, MType(False, None, IntType()))
+            if not left.is_func and isinstance(left.restype, Unknown):
+                self.type_infer_id(ast.left.name, o, MType(False, None, IntType()))
+            if not right.is_func and isinstance(right.restype, Unknown):
+                self.type_infer_id(ast.right.name, o, MType(False, None, IntType()))
             # Funcall
             if left.is_func and isinstance(left.restype, Unknown):
                 left.restype = IntType()
@@ -172,8 +174,8 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = IntType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(left.restype, IntType): raise TypeMismatchInExpression(ast)
-            if not isinstance(right.restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
             return MType(None, None, IntType())
         elif ast.op in ["+.", "-.", "*.","\."]:
             # Id
@@ -186,8 +188,8 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = FloatType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(left.restype, FloatType): raise TypeMismatchInExpression(ast)
-            if not isinstance(right.restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             MType(None, None, FloatType())
         elif ast.op in ["==", "!=", "<",">","<=", ">="]:
             # Id
@@ -200,8 +202,8 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = IntType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(left.restype, IntType): raise TypeMismatchInExpression(ast)
-            if not isinstance(right.restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
             return MType(None, None, BoolType())
         elif ast.op in ["=/=", "<.", ">.","<=.", ">=."]:
             # Id
@@ -214,8 +216,8 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = FloatType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(left.restype, FloatType): raise TypeMismatchInExpression(ast)
-            if not isinstance(right.restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             MType(None, None, BoolType())
         elif ast.op in ["&&", "||"]:
             # Id
@@ -228,8 +230,8 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = BoolType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(left.restype, BoolType): raise TypeMismatchInExpression(ast)
-            if not isinstance(right.restype, BoolType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.left, o).restype, BoolType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.right, o).restype, BoolType): raise TypeMismatchInExpression(ast)
             MType(None, None, BoolType())
 
     # Visit Unary expression
@@ -282,7 +284,7 @@ class StaticChecker(BaseVisitor):
             raise Undeclared(Function(), ast.method.name)
         # number of passed arguments and number of params must be the same
         if len(args_type) != len(param_type):
-            raise TypeMismatchInStatement(ast)
+            raise TypeMismatchInExpression(ast)
         # Check param types and argument type
         infer_param_type = False
         for i in range(len(param_type)):
@@ -295,7 +297,7 @@ class StaticChecker(BaseVisitor):
                 infer_param_type = True
             # Type of argument and associative param must be the same
             elif param_type[i].restype != args_type[i].restype:
-                raise TypeMismatchInStatement(ast)
+                raise TypeMismatchInExpression(ast)
         # Update param type list of function in environment
         if infer_param_type:
             for env in o:
@@ -345,9 +347,9 @@ class StaticChecker(BaseVisitor):
     # visit Id, if declared -> return inferred Id type, if not -> raise exception
     def visitId(self, ast, o):
         for env in o:
-            if ast.name.name in env and not env[ast.name.name].is_func:
-                return env[ast.name.name]
-        raise Undeclared(Identifier(), ast.name.name)
+            if ast.name in env and not env[ast.name].is_func:
+                return env[ast.name]
+        raise Undeclared(Identifier(), ast.name)
 
     """
     STATEMENTS
