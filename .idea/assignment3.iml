@@ -2,6 +2,7 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/initial/src/main/bkit/checker" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/initial/src/main/bkit/utils" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />

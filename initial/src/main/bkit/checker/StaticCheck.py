@@ -97,7 +97,7 @@ class StaticChecker(BaseVisitor):
         param_list = [dict()]
         # Check redeclared param
         for param in ast.param:
-            if param.variable.name in param_list:
+            if param.variable.name in param_list[0]:
                 raise Redeclared(Parameter(), param.variable.name)
             else:
                 param_type = Unknown()
@@ -106,12 +106,7 @@ class StaticChecker(BaseVisitor):
                 local_decl[0][param_name] = MType(False, None, param_type)
         # Check redeclared local variable
         for decl in ast.body[0]:
-            if decl.variable.name in local_decl[0]:
-                raise Redeclared(Variable(), decl.variable.name)
-            else:
-                var_type = self.visit(decl.varInit)
-                var_name = decl.variable.name
-                local_decl[0][var_name] = MType(False, None, var_type)
+            self.visit(decl, local_decl)
         rtn_type = Unknown()
         new_envi = local_decl + global_envi
         # Visit statements
@@ -136,7 +131,7 @@ class StaticChecker(BaseVisitor):
             if ast.varInit is not None:
                 var_type = ArrayType()
                 var_name = ast.variable.name
-                value_type = self.visit(ast.varInit).intype[0]
+                value_type = self.visit(ast.varInit, o).intype[0]
                 o[0][var_name] = MType(False, [value_type], var_type)
             else:
                 var_type = ArrayType()
@@ -146,7 +141,7 @@ class StaticChecker(BaseVisitor):
         # scalar variable
         else:
             if ast.varInit is not None:
-                var_type = self.visit(ast.varInit)
+                var_type = self.visit(ast.varInit, o)
                 var_name = ast.variable.name
                 o[0][var_name] = MType(False, None, var_type)
             else:
