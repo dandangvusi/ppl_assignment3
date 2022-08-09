@@ -134,3 +134,63 @@ class CheckSuite(unittest.TestCase):
             [CallStmt(Id("print"),[CallExpr(Id("add"),[Id("x"),Id("y")])])]))])
         expect = str(Redeclared(Parameter(), "a"))
         self.assertTrue(TestChecker.test(input,expect,414))
+
+    def test_15(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(4)),VarDecl(Id("y"),[],None)],
+                [Assign(Id("z"),BinaryOp("+",Id("x"),Id("y")))]))])
+        expect = str(Undeclared(Identifier(), "z"))
+        self.assertTrue(TestChecker.test(input,expect,415))
+
+    def test_16(self):
+        """Test undeclared parameter"""
+        input = Program([
+            FuncDecl(Id("add"),[VarDecl(Id("b"),[],None)],([],[Return(BinaryOp("+",Id("a"),Id("b")))]))
+            ,FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5)),VarDecl(Id("y"),[],IntLiteral(10))],
+            [CallStmt(Id("print"),[CallExpr(Id("add"),[Id("x"),Id("y")])])]))])
+        expect = str(Undeclared(Identifier(), "a"))
+        self.assertTrue(TestChecker.test(input,expect,416))
+
+    def test_17(self):
+        """Test undeclared function"""
+        input = Program([
+            FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5)),VarDecl(Id("y"),[],IntLiteral(10))],
+            [CallStmt(Id("print"),[CallExpr(Id("add"),[Id("x"),Id("y")])])]))])
+        expect = str(Undeclared(Function(), "add"))
+        self.assertTrue(TestChecker.test(input,expect,417))
+
+    def test_18(self):
+        """Test undeclared variable"""
+        input = Program([VarDecl(Id("x"),[],None),
+            FuncDecl(Id("fact"),[],([],[If([(BinaryOp("==",Id("n"),IntLiteral(0)),[],
+            [Return(IntLiteral(1))])],([],[Return(BinaryOp("*",Id("n"),CallExpr(Id("fact"),[BinaryOp("-",Id("n"),IntLiteral(1))])))]))])),
+            FuncDecl(Id("main"),[],([],[Assign(Id("x"),IntLiteral(10)),CallStmt(Id("fact"),[Id("x")])]))])
+        expect = str(Undeclared(Identifier(), "n"))
+        self.assertTrue(TestChecker.test(input,expect,418))
+
+    def test_19(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [Assign(ArrayCell(Id("a"),[IntLiteral(1),IntLiteral(2)]),BinaryOp("-",BinaryOp("*",IntLiteral(4),IntLiteral(5)),IntLiteral(2)))]))])
+        expect = str(Undeclared(Identifier(), "a"))
+        self.assertTrue(TestChecker.test(input,expect,419))
+
+    def test_20(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("a"),[],None)],
+                [If([(CallExpr(Id("bool_of_string"),[StringLiteral("True")]),[],
+                [Assign(Id("a"),CallExpr(Id("int_of_string"),[CallExpr(Id("read"),[])])),
+                Assign(Id("b"),BinaryOp("+.",CallExpr(Id("float_of_int"),[Id("a")]),FloatLiteral(2.0)))])],
+                ([],[]))]))])
+        expect = str(Undeclared(Identifier(), "b"))
+        self.assertTrue(TestChecker.test(input,expect,420))
+
+    def test_21(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [While(BinaryOp("<",Id("x"),BinaryOp("*",IntLiteral(100),IntLiteral(2))),(
+                [],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y"))),
+                 If([(BinaryOp(">=",Id("x"),IntLiteral(50)),[],[Continue()])],([],[]))]))]))])
+        expect = str(Undeclared(Identifier(), "y"))
+        self.assertTrue(TestChecker.test(input,expect,421))

@@ -143,7 +143,7 @@ class StaticChecker(BaseVisitor):
             if ast.varInit is not None:
                 var_type = self.visit(ast.varInit, o)
                 var_name = ast.variable.name
-                o[0][var_name] = MType(False, None, var_type)
+                o[0][var_name] = MType(False, None, var_type.restype)
             else:
                 var_type = Unknown()
                 var_name = ast.variable.name
@@ -287,11 +287,11 @@ class StaticChecker(BaseVisitor):
             if isinstance(args_type[i].restype, Unknown):
                 raise TypeCannotBeInferred(ast)
             # Param type infer
-            elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i].restype, Unknown):
+            elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 param_type[i] = args_type[i]
                 infer_param_type = True
             # Type of argument and associative param must be the same
-            elif param_type[i].restype != args_type[i].restype:
+            elif type(param_type[i]) is not type(args_type[i].restype):
                 raise TypeMismatchInExpression(ast)
         # Update param type list of function in environment
         if infer_param_type:
@@ -331,7 +331,7 @@ class StaticChecker(BaseVisitor):
     """
     # Visit array cell
     def visitArrayCell(self, ast, o):
-        arr = self.visit(ast.arr)
+        arr = self.visit(ast.arr, o)
         if not isinstance(arr.restype, ArrayType):
             raise TypeMismatchInExpression(ast)
         for arr_index in ast.idx:
@@ -359,8 +359,8 @@ class StaticChecker(BaseVisitor):
         # Type infer
         elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
             for env in o:
-                if ast.lhs.name.name in env:
-                    env[ast.lhs.name.name] = rhs
+                if ast.lhs.name in env:
+                    env[ast.lhs.name] = rhs
                     break
         elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
             for env in o:
@@ -368,7 +368,7 @@ class StaticChecker(BaseVisitor):
                     env[ast.rhs.name.name] = lhs
                     break
         # Both sides must be the same in type
-        elif lhs.restype != rhs.restype:
+        elif type(lhs.restype) is not type(rhs.restype):
             raise TypeMismatchInStatement(ast)
 
     # Visit If statement
@@ -466,11 +466,11 @@ class StaticChecker(BaseVisitor):
             if isinstance(args_type[i].restype, Unknown):
                 raise TypeCannotBeInferred(ast)
             # Param type infer
-            elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i].restype, Unknown):
+            elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 param_type[i] = args_type[i]
                 infer_param_type = True
             # Type of argument and associative param must be the same
-            elif param_type[i].restype != args_type[i].restype:
+            elif type(param_type[i]) is not type(args_type[i].restype):
                 raise TypeMismatchInStatement(ast)
         # Update param type list of function in environment
         if infer_param_type:
