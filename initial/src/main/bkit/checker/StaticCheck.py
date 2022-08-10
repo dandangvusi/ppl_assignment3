@@ -387,16 +387,19 @@ class StaticChecker(BaseVisitor):
     # Visit For statement
     def visitFor(self, ast, o):
         local_decl = [dict()]
-        exp1_type = self.visit(ast.expr1)
-        exp2_type = self.visit(ast.expr2)
-        exp3_type = self.visit(ast.expr3)
-        if not isinstance(exp1_type.resType, IntType) or not isinstance(exp3_type.restype, IntType):
+        exp1_type = self.visit(ast.expr1, o)
+        if not isinstance(exp1_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
+        local_decl[0][ast.idx1.name] = MType(False, None, exp1_type.restype)
+        new_env = local_decl + o
+        exp3_type = self.visit(ast.expr3, new_env)
+        if not isinstance(exp3_type.restype, IntType):
+            raise TypeMismatchInStatement(ast)
+        exp2_type = self.visit(ast.expr2, new_env)
         if not isinstance(exp2_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
         for var_decl in ast.loop[0]:
-            self.visit(var_decl, local_decl)
-        new_env = local_decl + o
+            self.visit(var_decl, new_env)
         for stmt in ast.loop[1]:
             self.visit(stmt, new_env)
 

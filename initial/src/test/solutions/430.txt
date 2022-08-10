@@ -1,0 +1,1 @@
+Type Mismatch In Statement: For(Id(i),Id(x),BinaryOp(=/=,Id(i),IntLiteral(10)),BinaryOp(*,IntLiteral(1),IntLiteral(2)),[VarDecl(Id(y),IntLiteral(2))],[Assign(Id(x),BinaryOp(+,Id(y),Id(i)))])

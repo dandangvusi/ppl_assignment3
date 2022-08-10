@@ -194,3 +194,107 @@ class CheckSuite(unittest.TestCase):
                  If([(BinaryOp(">=",Id("x"),IntLiteral(50)),[],[Continue()])],([],[]))]))]))])
         expect = str(Undeclared(Identifier(), "y"))
         self.assertTrue(TestChecker.test(input,expect,421))
+
+    def test_22(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]),
+                BinaryOp("<",Id("x"),BinaryOp("-",IntLiteral(100),BinaryOp("*",IntLiteral(5),IntLiteral(2)))))]))])
+        expect = str(Undeclared(Identifier(), "x"))
+        self.assertTrue(TestChecker.test(input,expect,422))
+
+    def test_23(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                []),
+                BinaryOp("<",Id("x"),BinaryOp("-",IntLiteral(100),BinaryOp("*",IntLiteral(5),IntLiteral(2)))))]))])
+        expect = str(Undeclared(Identifier(), "x"))
+        self.assertTrue(TestChecker.test(input,expect,423))
+
+    def test_24(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("add_one"),[],([],[Return(BinaryOp("+",Id("n"),IntLiteral(1)))])),
+                              FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],[CallStmt(Id("add_one"),[Id("x")])]))])
+        expect = str(Undeclared(Identifier(), "n"))
+        self.assertTrue(TestChecker.test(input,expect,424))
+
+    def test_25(self):
+        """Test undeclared variable"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),IntLiteral(0)),[VarDecl(Id("y"),[],IntLiteral(2)),VarDecl(Id("y"),[],IntLiteral(2))],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1))),Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(0)),[VarDecl(Id("y"),[],IntLiteral(2)),VarDecl(Id("y"),[],IntLiteral(2))],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2))),Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(100)),[VarDecl(Id("y"),[],IntLiteral(2)),VarDecl(Id("y"),[],IntLiteral(2))],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3))),Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([VarDecl(Id("y"),[],IntLiteral(2)),VarDecl(Id("y"),[],IntLiteral(2))],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4))),Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))]))])
+        expect = str(Undeclared(Identifier(), "x"))
+        self.assertTrue(TestChecker.test(input,expect,425))
+
+    def test_26(self):
+        """Test undeclared function"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(4)),VarDecl(Id("y"),[],IntLiteral(5)),
+                VarDecl(Id("z"),[],IntLiteral(6)), VarDecl(Id("t"),[],None)],
+                [Assign(Id("t"),BinaryOp("+",BinaryOp("+",Id("x"),Id("y")),CallExpr(Id("add_one"),[Id("z")])))]))])
+        expect = str(Undeclared(Function(), "add_one"))
+        self.assertTrue(TestChecker.test(input,expect,426))
+
+    def test_27(self):
+        """Test type mismatch in If statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [If([(BinaryOp("%",Id("x"),IntLiteral(2)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(100)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))]))])
+        expect = str(TypeMismatchInStatement(If([(BinaryOp("%",Id("x"),IntLiteral(2)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(100)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))))
+        self.assertTrue(TestChecker.test(input,expect,427))
+
+    def test_28(self):
+        """Test type mismatch in If statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (IntLiteral(0),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(100)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))]))])
+        expect = str(TypeMismatchInStatement(If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (IntLiteral(0),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(100)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))))
+        self.assertTrue(TestChecker.test(input,expect,429))
+
+    def test_29(self):
+        """Test type mismatch in If statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (Id("x"),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))]))])
+        expect = str(TypeMismatchInStatement(If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                     (BinaryOp(">",Id("x"),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                     (Id("x"),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                    ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))))
+        self.assertTrue(TestChecker.test(input,expect,429))
+
+    def test_30(self):
+        """Test type mismatch in For statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],FloatLiteral(5.0))],
+                [For(Id("i"),Id("x"),BinaryOp("=/=",Id("i"),IntLiteral(10)),BinaryOp("*",IntLiteral(1),IntLiteral(2)),
+                ([VarDecl(Id("y"),[],IntLiteral(2))],
+                [Assign(Id("x"),BinaryOp("+",Id("y"),Id("i")))]))]))])
+        expect = str(TypeMismatchInStatement(For(Id("i"),Id("x"),BinaryOp("=/=",Id("i"),IntLiteral(10)),BinaryOp("*",IntLiteral(1),IntLiteral(2)),
+                ([VarDecl(Id("y"),[],IntLiteral(2))],
+                [Assign(Id("x"),BinaryOp("+",Id("y"),Id("i")))]))))
+        self.assertTrue(TestChecker.test(input,expect,430))
+
+    def test_31(self):
+        """Test type mismatch in For statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],FloatLiteral(5.0))],
+                [For(Id("i"),FloatLiteral(5.0),BinaryOp("=/=",Id("i"),IntLiteral(10)),BinaryOp("*",IntLiteral(1),IntLiteral(2)),
+                ([VarDecl(Id("y"),[],IntLiteral(2))],
+                [Assign(Id("x"),BinaryOp("+",Id("y"),Id("i")))]))]))])
+        expect = str(TypeMismatchInStatement(For(Id("i"),FloatLiteral(5.0),BinaryOp("=/=",Id("i"),IntLiteral(10)),BinaryOp("*",IntLiteral(1),IntLiteral(2)),
+                ([VarDecl(Id("y"),[],IntLiteral(2))],
+                [Assign(Id("x"),BinaryOp("+",Id("y"),Id("i")))]))))
+        self.assertTrue(TestChecker.test(input,expect,431))
