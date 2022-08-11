@@ -185,7 +185,7 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
-            MType(None, None, FloatType())
+            return MType(None, None, FloatType())
         elif ast.op in ["==", "!=", "<",">","<=", ">="]:
             # Id
             if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, IntType()))
@@ -213,7 +213,7 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
-            MType(None, None, BoolType())
+            return MType(None, None, BoolType())
         elif ast.op in ["&&", "||"]:
             # Id
             if not left.is_func and isinstance(left.restype, Unknown): self.type_infer_id(ast.left.name, o, MType(False, None, BoolType()))
@@ -227,12 +227,13 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, BoolType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, BoolType): raise TypeMismatchInExpression(ast)
-            MType(None, None, BoolType())
+            return MType(None, None, BoolType())
 
     # Visit Unary expression
     def visitUnaryOp(self, ast, o):
         body = self.visit(ast.body, o)
-        if ast.op in ["-"]:
+        op = ast.op
+        if op in ["-"]:
             # Id
             if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, IntType()))
             # Funcall
@@ -241,7 +242,7 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.body.name, o, body)
             if not isinstance(body.restype, IntType): raise TypeMismatchInExpression(ast)
             return MType(None, None, IntType())
-        elif ast.op in ["-."]:
+        elif op in ["-."]:
             # Id
             if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, FloatType()))
             # Funcall
@@ -250,7 +251,7 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.body.name, o, body)
             if not isinstance(body.restype, FloatType): raise TypeMismatchInExpression(ast)
             return MType(None, None, FloatType())
-        elif ast.op in ["!"]:
+        elif op in ["!"]:
             # Id
             if not body.is_func and isinstance(body.restype, Unknown): self.type_infer_id(ast.body.name, o, MType(False, None, BoolType()))
             # Funcall
@@ -322,8 +323,9 @@ class StaticChecker(BaseVisitor):
         return typ
 
     def visitArrayLiteral(self, ast, o):
-        value_type = self.visit(ast.value[0]).restype
-        typ = MType(None, [value_type], ArrayType())
+        eletype = self.visit(ast.value[0]).restype
+        dimen = self.get_array_dim(ast.value)
+        typ = MType(None, None, ArrayType(dimen, eletype))
         return typ
 
     """
@@ -497,3 +499,9 @@ class StaticChecker(BaseVisitor):
         for e in env:
             if func_name in e:
                 e[func_name] = func_type
+
+    # Get dimension of an array literal
+    def get_array_dim(self, value_list):
+        if not isinstance(value_list[0], ArrayLiteral):
+            return [len(value_list)]
+        return [len(value_list)] + self.get_array_dim(value_list[0])
