@@ -129,15 +129,17 @@ class StaticChecker(BaseVisitor):
         # composite variable
         if len(ast.varDimen) != 0:
             if ast.varInit is not None:
-                var_type = ArrayType()
                 var_name = ast.variable.name
-                value_type = self.visit(ast.varInit, o).intype[0]
-                o[0][var_name] = MType(False, [value_type], var_type)
+                var_dim = ast.varDimen
+                value_type = self.visit(ast.varInit, o).restype.eletype
+                var_type = ArrayType(var_dim, value_type)
+                o[0][var_name] = MType(False, None, var_type)
             else:
-                var_type = ArrayType()
                 var_name = ast.variable.name
-                value_type = Unknown()
-                o[0][var_name] = MType(False, [value_type], var_type)
+                var_dim = ast.varDimen
+                value_type = Unknown
+                var_type = ArrayType(var_dim, value_type)
+                o[0][var_name] = MType(False, None, var_type)
         # scalar variable
         else:
             if ast.varInit is not None:
@@ -323,7 +325,7 @@ class StaticChecker(BaseVisitor):
         return typ
 
     def visitArrayLiteral(self, ast, o):
-        eletype = self.visit(ast.value[0]).restype
+        eletype = self.visit(ast.value[0], o).restype
         dimen = self.get_array_dim(ast.value)
         typ = MType(None, None, ArrayType(dimen, eletype))
         return typ
@@ -337,9 +339,12 @@ class StaticChecker(BaseVisitor):
         if not isinstance(arr.restype, ArrayType):
             raise TypeMismatchInExpression(ast)
         for arr_index in ast.idx:
-            index_type = self.visit(arr_index)
+            index_type = self.visit(arr_index, o)
             if not isinstance(index_type.restype, IntType):
                 raise TypeMismatchInExpression(ast)
+        for env in o:
+            if ast.arr.name in env and isinstance(env[ast.arr.name].restype, ArrayType):
+                return env[ast.arr.name]
 
     # visit Id, if declared -> return inferred Id type, if not -> raise exception
     def visitId(self, ast, o):
@@ -353,25 +358,48 @@ class StaticChecker(BaseVisitor):
     """
     # Visit Assignment statement
     def visitAssign(self, ast, o):
-        lhs = self.visit(ast.lhs, o)
-        rhs = self.visit(ast.rhs, o)
-        # Both sides can not be resolve -> raise exception
-        if isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
-            raise TypeCannotBeInferred(ast)
-        # Type infer
-        elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
-            for env in o:
-                if ast.lhs.name in env:
-                    env[ast.lhs.name] = rhs
-                    break
-        elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
-            for env in o:
-                if ast.rhs.name.name in env:
-                    env[ast.rhs.name.name] = lhs
-                    break
-        # Both sides must be the same in type
-        elif type(lhs.restype) is not type(rhs.restype):
-            raise TypeMismatchInStatement(ast)
+        # lhs is Id
+        if isinstance(ast.lhs, Id):
+            lhs = self.visit(ast.lhs, o)
+            rhs = self.visit(ast.rhs, o)
+            # Both sides can not be resolve -> raise exception
+            if isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
+                raise TypeCannotBeInferred(ast)
+            # Type infer
+            elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
+                for env in o:
+                    if ast.lhs.name in env:
+                        env[ast.lhs.name] = rhs
+                        break
+            elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
+                for env in o:
+                    if ast.rhs.name.name in env:
+                        env[ast.rhs.name.name] = lhs
+                        break
+            # Both sides must be the same in type
+            elif type(lhs.restype) is not type(rhs.restype):
+                raise TypeMismatchInStatement(ast)
+        # lhs is array cell
+        else:
+            lhs = self.visit(ast.lhs, o)
+            rhs = self.visit(ast.rhs, o)
+            # Both sides can not be resolve -> raise exception
+            if isinstance(lhs.restype.eletype, Unknown) and isinstance(rhs.restype, Unknown):
+                raise TypeCannotBeInferred(ast)
+            # Type infer
+            elif isinstance(lhs.restype.eletype, Unknown) and not isinstance(rhs.restype, Unknown):
+                for env in o:
+                    if ast.lhs.name in env:
+                        env[ast.lhs.name].restype.eletype = rhs
+                        break
+            elif not isinstance(lhs.restype.eletype, Unknown) and isinstance(rhs.restype, Unknown):
+                for env in o:
+                    if ast.rhs.name.name in env:
+                        env[ast.rhs.name] = lhs.restype.eletype
+                        break
+            # Both sides must be the same in type
+            elif type(lhs.restype.eletype) is not type(rhs.restype):
+                raise TypeMismatchInStatement(ast)
 
     # Visit If statement
     def visitIf(self, ast, o):
