@@ -107,7 +107,7 @@ class StaticChecker(BaseVisitor):
         # Check redeclared local variable
         for decl in ast.body[0]:
             self.visit(decl, local_decl)
-        rtn_type = Unknown()
+        rtn_type = VoidType()
         new_envi = local_decl + global_envi
         # Visit statements
         for stmt in ast.body[1]:
@@ -445,8 +445,8 @@ class StaticChecker(BaseVisitor):
     # Visit Return statement
     def visitReturn(self, ast, o):
         if ast.expr is not None:
-            return self.visit(ast.expr, o)
-        return None
+            return self.visit(ast.expr, o).restype
+        return VoidType()
 
     # Visit DoWhile statement
     def visitDowhile(self, ast, o):

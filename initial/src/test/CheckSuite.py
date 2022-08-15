@@ -369,3 +369,108 @@ class CheckSuite(unittest.TestCase):
                 [Assign(ArrayCell(Id("arr"),[Id("b")]),IntLiteral(1))]))])
         expect = str(TypeMismatchInExpression(ArrayCell(Id("arr"),[Id("b")])))
         self.assertTrue(TestChecker.test(input,expect,438))
+
+    def test_39(self):
+        """Test type mismatch in While statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [While(BinaryOp("+",Id("x"),IntLiteral(100)),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]))]))])
+        expect = str(TypeMismatchInStatement(While(BinaryOp("+",Id("x"),IntLiteral(100)),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]))))
+        self.assertTrue(TestChecker.test(input,expect,439))
+
+    def test_40(self):
+        """Test type mismatch in While statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [While(Id("x"),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]))]))])
+        expect = str(TypeMismatchInStatement(While(Id("x"),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]))))
+        self.assertTrue(TestChecker.test(input,expect,440))
+
+    def test_41(self):
+        """Test type mismatch in Binary expression"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],BooleanLiteral(True))],
+                [While(Id("x"),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("+",Id("x"),Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,441))
+
+    def test_42(self):
+        """Test type mismatch assign statement"""
+        input = Program([FuncDecl(Id("main"), [],
+                ([VarDecl(Id("arr"),[3],ArrayLiteral([IntLiteral(1),IntLiteral(2),IntLiteral(3)])),VarDecl(Id("b"),[],FloatLiteral(6.9))],
+                [Assign(ArrayCell(Id("arr"),[IntLiteral(1)]),Id("b"))]))])
+        expect = str(TypeMismatchInStatement(Assign(ArrayCell(Id("arr"),[IntLiteral(1)]),Id("b"))))
+        self.assertTrue(TestChecker.test(input,expect,442))
+
+    def test_43(self):
+        """Test type mismatch assign statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [While(BinaryOp("<",Id("x"),BinaryOp("-",IntLiteral(100),BinaryOp("*",IntLiteral(5),IntLiteral(2)))),(
+                [VarDecl(Id("y"),[],FloatLiteral(5.0))],
+                [Assign(Id("x"),Id("y"))]))]))])
+        expect = str(TypeMismatchInStatement(Assign(Id("x"),Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,443))
+
+    def test_44(self):
+        """Test type mismatch assign statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("a"),[],StringLiteral("Dan"))],
+                [Assign(Id("a"),BinaryOp("-",BinaryOp("*",BinaryOp("+",IntLiteral(2),IntLiteral(3)),
+                BinaryOp("-",IntLiteral(4),IntLiteral(2))),BinaryOp("%",IntLiteral(5),IntLiteral(2))))]))])
+        expect = str(TypeMismatchInStatement(Assign(Id("a"),BinaryOp("-",BinaryOp("*",BinaryOp("+",IntLiteral(2),IntLiteral(3)),
+                BinaryOp("-",IntLiteral(4),IntLiteral(2))),BinaryOp("%",IntLiteral(5),IntLiteral(2))))))
+        self.assertTrue(TestChecker.test(input,expect,444))
+
+    def test_45(self):
+        """Test type mismatch in Do-While statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]),Id("x"))]))])
+        expect = str(TypeMismatchInStatement(Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]),Id("x"))))
+        self.assertTrue(TestChecker.test(input,expect,445))
+
+    def test_46(self):
+        """Test type mismatch in Do-While statement"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]),StringLiteral("Dan"))]))])
+        expect = str(TypeMismatchInStatement(Dowhile(([VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y")))]),StringLiteral("Dan"))))
+        self.assertTrue(TestChecker.test(input,expect,446))
+
+    def test_47(self):
+        """Test type mismatch in func call statement"""
+        input = Program([FuncDecl(Id("add_one"),[VarDecl(Id("n"),[],None)],([],[Return(BinaryOp("+",Id("n"),IntLiteral(1)))])),
+                              FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],[CallStmt(Id("add_one"),[Id("x")])]))])
+        expect = str(TypeMismatchInStatement(CallStmt(Id("add_one"),[Id("x")])))
+        self.assertTrue(TestChecker.test(input,expect,447))
+
+    def test_48(self):
+        """Test type mismatch in func call statement"""
+        input = Program([VarDecl(Id("x"),[],None),
+            FuncDecl(Id("fact"),[VarDecl(Id("n"),[],None)],([],[If([(BinaryOp("==",Id("n"),IntLiteral(0)),[],
+            [Return(IntLiteral(1))])],([],[Return(BinaryOp("*",Id("n"),CallExpr(Id("fact"),[BinaryOp("-",Id("n"),IntLiteral(1))])))]))])),
+            FuncDecl(Id("main"),[],([],[Assign(Id("x"),IntLiteral(10)),CallStmt(Id("fact"),[Id("x")])]))])
+        expect = str(TypeMismatchInStatement(CallStmt(Id("fact"),[Id("x")])))
+        self.assertTrue(TestChecker.test(input,expect,448))
+
+    def test_49(self):
+        """Test type mismatch in func call statement (invalid number of args)"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [CallStmt(Id("printStr"), [StringLiteral("Hi"), StringLiteral("Dan")])]))])
+        expect = str(TypeMismatchInStatement(CallStmt(Id("printStr"), [StringLiteral("Hi"), StringLiteral("Dan")])))
+        self.assertTrue(TestChecker.test(input,expect,449))
+
+    def test_50(self):
+        """Test type mismatch in func call statement (invalid type of args)"""
+        input = Program([FuncDecl(Id("main"),[],([],
+                [CallStmt(Id("printStr"), [IntLiteral(6)])]))])
+        expect = str(TypeMismatchInStatement(CallStmt(Id("printStr"), [IntLiteral(6)])))
+        self.assertTrue(TestChecker.test(input,expect,450))
