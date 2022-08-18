@@ -571,3 +571,70 @@ class CheckSuite(unittest.TestCase):
                 [Assign(Id("c"),BinaryOp("+.",UnaryOp("-", ArrayCell(Id("arr"),[IntLiteral(3)])),Id("b")))]))])
         expect = str(TypeMismatchInExpression(UnaryOp("-", ArrayCell(Id("arr"),[IntLiteral(3)]))))
         self.assertTrue(TestChecker.test(input,expect,462))
+
+    def test_63(self):
+        """Test type mismatch in expression (-. unary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("arr"),[3],ArrayLiteral([IntLiteral(1),IntLiteral(2),IntLiteral(3)]))
+                ,VarDecl(Id("a"),[],IntLiteral(1)),VarDecl(Id("b"),[],FloatLiteral(2.0)),VarDecl(Id("c"),[],None)],
+                [Assign(Id("c"),BinaryOp("+",UnaryOp("-.", ArrayCell(Id("arr"),[IntLiteral(3)])),Id("b")))]))])
+        expect = str(TypeMismatchInExpression(UnaryOp("-.", ArrayCell(Id("arr"),[IntLiteral(3)]))))
+        self.assertTrue(TestChecker.test(input,expect,463))
+
+    def test_64(self):
+        """Test type mismatch in expression (- unary operation)"""
+        input = Program([FuncDecl(Id("main"), [], ([VarDecl(Id("x"), [], IntLiteral(4)), VarDecl(Id("y"), [], IntLiteral(5)),
+                VarDecl(Id("z"), [], IntLiteral(6)), VarDecl(Id("t"), [], None)],
+                [Assign(Id("t"),BinaryOp("-",BinaryOp("*",UnaryOp("-.",Id("x")),Id("y")),BinaryOp("\\",Id("z"),UnaryOp("-",IntLiteral(5)))))]))])
+        expect = str(TypeMismatchInExpression(UnaryOp("-.",Id("x"))))
+        self.assertTrue(TestChecker.test(input,expect,464))
+
+    def test_65(self):
+        """Test type mismatch in expression (+. binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(45)),VarDecl(Id("y"),[],IntLiteral(52)),
+                VarDecl(Id("z"),[],FloatLiteral(6.9)), VarDecl(Id("t"),[],None)],
+                [Assign(Id("t"),BinaryOp("+.",BinaryOp("*",Id("x"),Id("y")),BinaryOp("*.",Id("z"),FloatLiteral(5e-10))))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("+.",BinaryOp("*",Id("x"),Id("y")),BinaryOp("*.",Id("z"),FloatLiteral(5e-10)))))
+        self.assertTrue(TestChecker.test(input,expect,465))
+
+    def test_66(self):
+        """Test type mismatch in expression (-. binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],FloatLiteral(4.5)),VarDecl(Id("y"),[],FloatLiteral(5.2e-1)),
+                VarDecl(Id("z"),[],FloatLiteral(6.9)), VarDecl(Id("t"),[],None)],
+                [Assign(Id("t"),BinaryOp("-.",BinaryOp("+.",BinaryOp("-.",Id("x"),Id("y")),Id("z")),IntLiteral(5)))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("-.",BinaryOp("+.",BinaryOp("-.",Id("x"),Id("y")),Id("z")),IntLiteral(5))))
+        self.assertTrue(TestChecker.test(input,expect,466))
+
+    def test_67(self):
+        """Test type mismatch in expression (*. binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],FloatLiteral(4.5)),VarDecl(Id("y"),[],FloatLiteral(5.2e-1)),
+                VarDecl(Id("z"),[],FloatLiteral(6.9)), VarDecl(Id("t"),[],None)],
+                [Assign(Id("t"),BinaryOp("+.",BinaryOp("*.",Id("x"),Id("y")),BinaryOp("*.",Id("z"),FloatLiteral(5e-10)))),
+                 Assign(Id("z"),BinaryOp("*.",Id("t"),IntLiteral(5)))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("*.",Id("t"),IntLiteral(5))))
+        self.assertTrue(TestChecker.test(input,expect,467))
+
+    def test_68(self):
+        """Test type mismatch in expression (\. binary operation)"""
+        input = Program([FuncDecl(Id("main"), [], (
+                [VarDecl(Id("x"), [], IntLiteral(5)), VarDecl(Id("y"), [], FloatLiteral(5.2e-1)),
+                VarDecl(Id("z"), [], FloatLiteral(6.9)), VarDecl(Id("t"), [], None)],
+                [Assign(Id("t"),BinaryOp("\.", BinaryOp("*.", BinaryOp("\.", Id("x"), Id("y")), Id("z")), IntLiteral(5)))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("\.", Id("x"), Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,468))
+
+    def test_69(self):
+        """Test type mismatch in expression (== binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [If([(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),FloatLiteral(1.0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),
+                (BinaryOp(">",Id("x"),IntLiteral(0)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(2)))]),
+                (BinaryOp(">",Id("x"),IntLiteral(100)),[],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(3)))])],
+                ([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(4)))]))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("==",BinaryOp("%",Id("x"),IntLiteral(2)),FloatLiteral(1.0))))
+        self.assertTrue(TestChecker.test(input,expect,469))
+
+    def test_70(self):
+        """Test type mismatch in expression (== binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [While(BinaryOp("<",Id("x"),FloatLiteral(10.5)),([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("<",Id("x"),FloatLiteral(10.5))))
+        self.assertTrue(TestChecker.test(input,expect,470))
