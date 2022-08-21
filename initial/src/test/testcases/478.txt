@@ -11,7 +11,6 @@
                     EndBody.
                 Function: main
                     Body:
-                        x = 10;
-                        fact(x);
+                        x = fact(5.0);
                     EndBody.
                 

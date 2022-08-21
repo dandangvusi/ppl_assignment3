@@ -1,0 +1,8 @@
+
+                Function: main
+                    Body:
+                        Var: x = 0.5, y, z;
+                        y = 12 * 5;
+                        z = x <=. y;
+                    EndBody.
+                

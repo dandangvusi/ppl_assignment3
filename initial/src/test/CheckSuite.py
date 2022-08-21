@@ -454,10 +454,23 @@ class CheckSuite(unittest.TestCase):
 
     def test_48(self):
         """Test type mismatch in func call statement"""
-        input = Program([VarDecl(Id("x"),[],None),
-            FuncDecl(Id("fact"),[VarDecl(Id("n"),[],None)],([],[If([(BinaryOp("==",Id("n"),IntLiteral(0)),[],
-            [Return(IntLiteral(1))])],([],[Return(BinaryOp("*",Id("n"),CallExpr(Id("fact"),[BinaryOp("-",Id("n"),IntLiteral(1))])))]))])),
-            FuncDecl(Id("main"),[],([],[Assign(Id("x"),IntLiteral(10)),CallStmt(Id("fact"),[Id("x")])]))])
+        input = """
+                Var: x;
+                Function: fact
+                    Parameter: n
+                    Body:
+                        If n==0 Then
+                            Return 1;
+                        Else
+                            Return n*fact(n-1);
+                        EndIf.
+                    EndBody.
+                Function: main
+                    Body:
+                        x = 10;
+                        fact(x);
+                    EndBody.
+                """
         expect = str(TypeMismatchInStatement(CallStmt(Id("fact"),[Id("x")])))
         self.assertTrue(TestChecker.test(input,expect,448))
 
@@ -638,3 +651,178 @@ class CheckSuite(unittest.TestCase):
                 [While(BinaryOp("<",Id("x"),FloatLiteral(10.5)),([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]))]))])
         expect = str(TypeMismatchInExpression(BinaryOp("<",Id("x"),FloatLiteral(10.5))))
         self.assertTrue(TestChecker.test(input,expect,470))
+
+    def test_71(self):
+        """Test type mismatch in expression (=/= binary operation)"""
+        input = Program([FuncDecl(Id("main"),[],([VarDecl(Id("x"),[],IntLiteral(5))],
+                [For(Id("i"),IntLiteral(0),BinaryOp("=/=",Id("i"),FloatLiteral(10.0)),BinaryOp("*",IntLiteral(1),IntLiteral(2)),
+                ([VarDecl(Id("y"),[],IntLiteral(2))],
+                [Assign(Id("x"),BinaryOp("+",Id("y"),Id("i")))]))]))])
+        expect = str(TypeMismatchInExpression(BinaryOp("=/=",Id("i"),FloatLiteral(10.0))))
+        self.assertTrue(TestChecker.test(input,expect,471))
+
+    def test_72(self):
+        """Test type mismatch in expression (>=. binary operation)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x = 0.5, y, z;
+                        y = 12 * 5;
+                        z = x <=. y;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("<=.",Id("x"), Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,472))
+
+    def test_73(self):
+        """Test type mismatch in expression (! unary operation)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: a = 1, b = False, c;
+                        c = !a && b;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(UnaryOp("!",Id("a"))))
+        self.assertTrue(TestChecker.test(input,expect,473))
+
+    def test_74(self):
+        """Test type mismatch in expression (&& binary operation)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: a = True, b = 4, c;
+                        c = a && b;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("&&",Id("a"),Id("b"))))
+        self.assertTrue(TestChecker.test(input,expect,474))
+
+    def test_75(self):
+        """Test type mismatch in expression (&& binary operation)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: a = True, b = False, c;
+                        c = a && b || 3;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("||",BinaryOp("&&",Id("a"),Id("b")),IntLiteral(3))))
+        self.assertTrue(TestChecker.test(input,expect,475))
+
+    def test_76(self):
+        """Test type mismatch in call expression (wrong param number)"""
+        input = """
+                Function: add
+                    Parameter: a, b
+                    Body:
+                        Return a + b;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5, y = 10;
+                        print(add(x));
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(CallExpr(Id("add"),[Id("x")])))
+        self.assertTrue(TestChecker.test(input,expect,476))
+
+    def test_77(self):
+        """Test type mismatch in call expression (wrong param type)"""
+        input = """
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5.0;
+                        x = add_one(x) + 1;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(CallExpr(Id("add_one"),[Id("x")])))
+        self.assertTrue(TestChecker.test(input,expect,477))
+
+    def test_78(self):
+        """Test type mismatch in call expression (wrong param type)"""
+        input = """
+                Var: x;
+                Function: fact
+                    Parameter: n
+                    Body:
+                        If n==0 Then
+                            Return 1;
+                        Else
+                            Return n*fact(n-1);
+                        EndIf.
+                    EndBody.
+                Function: main
+                    Body:
+                        x = fact(5.0);
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(CallExpr(Id("fact"),[FloatLiteral(5.0)])))
+        self.assertTrue(TestChecker.test(input,expect,478))
+
+    def test_79(self):
+        """Test type mismatch in call expression (wrong param type)"""
+        input = """
+                Var: x = 1.0;
+                Function: fact
+                    Parameter: n
+                    Body:
+                        If n==0 Then
+                            Return 1;
+                        Else
+                            Return n*fact(n-1);
+                        EndIf.
+                    EndBody.
+                Function: main
+                    Body:
+                        x = fact(5);
+                    EndBody.
+                """
+        expect = str(TypeMismatchInStatement(Assign(Id("x"),CallExpr(Id("fact"), [IntLiteral(5)]))))
+        self.assertTrue(TestChecker.test(input,expect,479))
+
+    def test_80(self):
+        """Test type mismatch in call expression (wrong param type)"""
+        input = """
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5;
+                        x = add_one(x) + 1.0;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("+", CallExpr(Id("add_one"),[Id("x")]), FloatLiteral(1.0))))
+        self.assertTrue(TestChecker.test(input,expect,480))
+
+    def test_81(self):
+        """Test type cannot be inferred (Id)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x, y;
+                        x = y;
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(Assign(Id("x"), Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,481))
+
+    def test_82(self):
+        """Test type cannot be inferred (array cell)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: arr[3], y;
+                        arr[1] = y;
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(Assign(ArrayCell(Id("arr"), [IntLiteral(1)]), Id("y"))))
+        self.assertTrue(TestChecker.test(input,expect,482))

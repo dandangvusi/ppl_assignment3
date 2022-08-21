@@ -1,0 +1,12 @@
+
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5;
+                        x = add_one(x) + 1.0;
+                    EndBody.
+                

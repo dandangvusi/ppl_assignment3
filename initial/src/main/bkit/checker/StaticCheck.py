@@ -111,14 +111,20 @@ class StaticChecker(BaseVisitor):
         new_envi = local_decl + global_envi
         # Visit statements
         for stmt in ast.body[1]:
-            if isinstance(stmt, Return):
-                rtn_type = self.visit(stmt.expr, new_envi)
-            else:
-                self.visit(stmt, new_envi)
+            rt_type = self.visit(stmt, new_envi)
+            if rt_type is not None:
+                rtn_type = rt_type
+            # if isinstance(stmt, Return):
+            #     rtn_type = self.visit(stmt, new_envi)
+            # else:
+            #     self.visit(stmt, new_envi)
         # Add function to environment
         intype = []
         for param in ast.param:
-            intype.append(Unknown)
+            if param.variable.name in new_envi[0]:
+                intype.append(new_envi[0][param.variable.name].restype)
+            else:
+                intype.append(Unknown())
         global_envi[0][ast.name.name] = MType(True, intype, rtn_type)
 
     # Visit variable declaration
@@ -137,7 +143,7 @@ class StaticChecker(BaseVisitor):
             else:
                 var_name = ast.variable.name
                 var_dim = ast.varDimen
-                value_type = Unknown
+                value_type = Unknown()
                 var_type = ArrayType(var_dim, value_type)
                 o[0][var_name] = MType(False, None, var_type)
         # scalar variable
@@ -373,8 +379,8 @@ class StaticChecker(BaseVisitor):
                         break
             elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.rhs.name.name in env:
-                        env[ast.rhs.name.name] = lhs
+                    if ast.rhs.name in env:
+                        env[ast.rhs.name] = lhs
                         break
             # Both sides must be the same in type
             elif type(lhs.restype) is not type(rhs.restype):
@@ -394,7 +400,7 @@ class StaticChecker(BaseVisitor):
                         break
             elif not isinstance(lhs.restype.eletype, Unknown) and isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.rhs.name.name in env:
+                    if ast.rhs.name in env:
                         env[ast.rhs.name] = lhs.restype.eletype
                         break
             # Both sides must be the same in type
@@ -403,6 +409,7 @@ class StaticChecker(BaseVisitor):
 
     # Visit If statement
     def visitIf(self, ast, o):
+        rtn_type = None
         for if_stmt in ast.ifthenStmt:
             local_decl = [dict()]
             cond_type = self.visit(if_stmt[0], o)
@@ -412,11 +419,15 @@ class StaticChecker(BaseVisitor):
                 self.visit(var_decl, local_decl)
             new_env = local_decl + o
             for stmt in if_stmt[2]:
-                self.visit(stmt, new_env)
+                tmp = self.visit(stmt, new_env)
+                if tmp is not None:
+                    rtn_type = tmp
+        return rtn_type
 
     # Visit For statement
     def visitFor(self, ast, o):
         local_decl = [dict()]
+        rtn_type = None
         exp1_type = self.visit(ast.expr1, o)
         if not isinstance(exp1_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
@@ -431,7 +442,10 @@ class StaticChecker(BaseVisitor):
         for var_decl in ast.loop[0]:
             self.visit(var_decl, new_env)
         for stmt in ast.loop[1]:
-            self.visit(stmt, new_env)
+            tmp = self.visit(stmt, new_env)
+            if tmp is not None:
+                rtn_type = tmp
+        return rtn_type
 
 
     # Visit Break statement
@@ -445,11 +459,13 @@ class StaticChecker(BaseVisitor):
     # Visit Return statement
     def visitReturn(self, ast, o):
         if ast.expr is not None:
-            return self.visit(ast.expr, o).restype
+            rtn_type = self.visit(ast.expr, o).restype
+            return rtn_type
         return VoidType()
 
     # Visit DoWhile statement
     def visitDowhile(self, ast, o):
+        rtn_type = None
         cond_type = self.visit(ast.exp, o)
         if not isinstance(cond_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
@@ -458,10 +474,14 @@ class StaticChecker(BaseVisitor):
             self.visit(var_decl, local_decl)
         new_env = local_decl + o
         for stmt in ast.sl[1]:
-            self.visit(stmt, new_env)
+            tmp = self.visit(stmt, new_env)
+            if tmp is not None:
+                rtn_type = tmp
+        return rtn_type
 
     # Visit While statement
     def visitWhile(self, ast, o):
+        rtn_type = None
         cond_type = self.visit(ast.exp, o)
         if not isinstance(cond_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
@@ -470,7 +490,10 @@ class StaticChecker(BaseVisitor):
             self.visit(var_decl, local_decl)
         new_env = local_decl + o
         for stmt in ast.sl[1]:
-            self.visit(stmt, new_env)
+            tmp = self.visit(stmt, new_env)
+            if tmp is not None:
+                rtn_type = tmp
+        return rtn_type
 
     # Visit Function call statement
     def visitCallStmt(self, ast, o):
@@ -505,6 +528,9 @@ class StaticChecker(BaseVisitor):
             # Type of argument and associative param must be the same
             elif type(param_type[i]) is not type(args_type[i].restype):
                 raise TypeMismatchInStatement(ast)
+        # Check return type of function is not VoidType
+        if not isinstance(rtn_type.restype, VoidType):
+            raise TypeMismatchInStatement(ast)
         # Update param type list of function in environment
         if infer_param_type:
             for env in o:
@@ -521,12 +547,14 @@ class StaticChecker(BaseVisitor):
         for e in env:
             if id_name in e:
                 e[id_name] = id_type
+                break
 
     # Infer type for identifier
     def type_infer_func(self, func_name, env, func_type):
         for e in env:
             if func_name in e:
                 e[func_name] = func_type
+                break
 
     # Get dimension of an array literal
     def get_array_dim(self, value_list):

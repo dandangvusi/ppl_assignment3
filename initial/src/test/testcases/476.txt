@@ -1,0 +1,12 @@
+
+                Function: add
+                    Parameter: a, b
+                    Body:
+                        Return a + b;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5, y = 10;
+                        print(add(x));
+                    EndBody.
+                
