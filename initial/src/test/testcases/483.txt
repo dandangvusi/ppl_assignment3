@@ -1,0 +1,12 @@
+
+                Function: add
+                    Parameter: a, b
+                    Body:
+                        printStr("hello");
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5, y;
+                        add(x, y);
+                    EndBody.
+                

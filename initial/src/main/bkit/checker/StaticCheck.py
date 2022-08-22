@@ -125,7 +125,10 @@ class StaticChecker(BaseVisitor):
                 intype.append(new_envi[0][param.variable.name].restype)
             else:
                 intype.append(Unknown())
-        global_envi[0][ast.name.name] = MType(True, intype, rtn_type)
+        if isinstance(rtn_type, MType):
+            global_envi[0][ast.name.name] = MType(True, intype, rtn_type.restype)
+        else:
+            global_envi[0][ast.name.name] = MType(True, intype, rtn_type)
 
     # Visit variable declaration
     def visitVarDecl(self, ast, o):
@@ -293,12 +296,15 @@ class StaticChecker(BaseVisitor):
         infer_param_type = False
         for i in range(len(param_type)):
             # If there is exists at least one type-unresolved parameter, raise TypeCannotBeInferred() for call statement
-            if isinstance(args_type[i].restype, Unknown):
+            if isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 raise TypeCannotBeInferred(ast)
             # Param type infer
             elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 param_type[i] = args_type[i]
                 infer_param_type = True
+            # Argument type infer
+            elif isinstance(args_type[i].restype, Unknown) and not isinstance(param_type[i], Unknown):
+                args_type[i] = param_type[i]
             # Type of argument and associative param must be the same
             elif type(param_type[i]) is not type(args_type[i].restype):
                 raise TypeMismatchInExpression(ast)
@@ -413,6 +419,8 @@ class StaticChecker(BaseVisitor):
         for if_stmt in ast.ifthenStmt:
             local_decl = [dict()]
             cond_type = self.visit(if_stmt[0], o)
+            if isinstance(cond_type.restype, Unknown):
+                raise TypeCannotBeInferred(ast)
             if not isinstance(cond_type.restype, BoolType):
                 raise TypeMismatchInStatement(ast)
             for var_decl in if_stmt[1]:
@@ -519,12 +527,15 @@ class StaticChecker(BaseVisitor):
         infer_param_type = False
         for i in range(len(param_type)):
             # If there is exists at least one type-unresolved parameter, raise TypeCannotBeInferred() for call statement
-            if isinstance(args_type[i].restype, Unknown):
+            if isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 raise TypeCannotBeInferred(ast)
             # Param type infer
             elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 param_type[i] = args_type[i]
                 infer_param_type = True
+            # Argument type infer
+            elif isinstance(args_type[i].restype, Unknown) and not isinstance(param_type[i], Unknown):
+                args_type[i] = param_type[i]
             # Type of argument and associative param must be the same
             elif type(param_type[i]) is not type(args_type[i].restype):
                 raise TypeMismatchInStatement(ast)

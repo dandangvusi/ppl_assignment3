@@ -804,7 +804,7 @@ class CheckSuite(unittest.TestCase):
         self.assertTrue(TestChecker.test(input,expect,480))
 
     def test_81(self):
-        """Test type cannot be inferred (Id)"""
+        """Test type cannot be inferred (assign statement - Id)"""
         input = """
                 Function: main
                     Body:
@@ -816,7 +816,7 @@ class CheckSuite(unittest.TestCase):
         self.assertTrue(TestChecker.test(input,expect,481))
 
     def test_82(self):
-        """Test type cannot be inferred (array cell)"""
+        """Test type cannot be inferred (assign statement - array cell)"""
         input = """
                 Function: main
                     Body:
@@ -826,3 +826,54 @@ class CheckSuite(unittest.TestCase):
                 """
         expect = str(TypeCannotBeInferred(Assign(ArrayCell(Id("arr"), [IntLiteral(1)]), Id("y"))))
         self.assertTrue(TestChecker.test(input,expect,482))
+
+    def test_83(self):
+        """Test type cannot be inferred (function call)"""
+        input = """
+                Function: add
+                    Parameter: a, b
+                    Body:
+                        printStr("hello");
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5, y;
+                        add(x, y);
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(CallStmt(Id("add"),[Id("x"),Id("y")])))
+        self.assertTrue(TestChecker.test(input,expect,483))
+
+    def test_84(self):
+        """Test type cannot be inferred (function call)"""
+        input = """
+                Function: hello
+                    Parameter: name
+                    Body:
+                        printStr(name);
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: n;
+                        hello(n);
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(CallStmt(Id("hello"),[Id("n")])))
+        self.assertTrue(TestChecker.test(input,expect,484))
+
+    def test_85(self):
+        """Test type cannot be inferred (if statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x;
+                        If x Then
+                            printStr("if statement");
+                        Else
+                            printStr("else statement");
+                        EndIf.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(If([(Id("x"),[],[CallStmt(Id("printStr"),[StringLiteral("if statement")])])],
+                ([],[CallStmt(Id("printStr"),[StringLiteral("else statement")])]))))
+        self.assertTrue(TestChecker.test(input, expect, 485))

@@ -1,0 +1,12 @@
+
+                Function: hello
+                    Parameter: name
+                    Body:
+                        printStr(name);
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: n;
+                        hello(n);
+                    EndBody.
+                

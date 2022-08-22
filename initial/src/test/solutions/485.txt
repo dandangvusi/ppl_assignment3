@@ -1,0 +1,1 @@
+Type Cannot Be Inferred: If(Id(x),[],[CallStmt(Id(printStr),[StringLiteral(if statement)])])Else([],[CallStmt(Id(printStr),[StringLiteral(else statement)])])
