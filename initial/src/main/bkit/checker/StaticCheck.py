@@ -41,6 +41,7 @@ class MType:
     is_func: bool
     intype:List[Type]
     restype:Type
+    type_infer_error: bool = False
 
 @dataclass
 class Symbol:
@@ -182,6 +183,8 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
+                return MType(None, None, IntType(), True)
             return MType(None, None, IntType())
         elif ast.op in ["+.", "-.", "*.","\."]:
             # Id
@@ -196,6 +199,8 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
+                return MType(None, None, FloatType(), True)
             return MType(None, None, FloatType())
         elif ast.op in ["==", "!=", "<",">","<=", ">="]:
             # Id
@@ -210,6 +215,8 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
+                return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
         elif ast.op in ["=/=", "<.", ">.","<=.", ">=."]:
             # Id
@@ -224,6 +231,8 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
+                return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
         elif ast.op in ["&&", "||"]:
             # Id
@@ -238,6 +247,8 @@ class StaticChecker(BaseVisitor):
                 self.type_infer_func(ast.right.name, o, right)
             if not isinstance(self.visit(ast.left, o).restype, BoolType): raise TypeMismatchInExpression(ast)
             if not isinstance(self.visit(ast.right, o).restype, BoolType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
+                return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
 
     # Visit Unary expression
@@ -251,7 +262,9 @@ class StaticChecker(BaseVisitor):
             if body.is_func and isinstance(body.restype, Unknown):
                 body.restype = IntType()
                 self.type_infer_func(ast.body.name, o, body)
-            if not isinstance(body.restype, IntType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.body, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.body, o).type_infer_error:
+                return MType(None, None, IntType(), True)
             return MType(None, None, IntType())
         elif op in ["-."]:
             # Id
@@ -260,7 +273,9 @@ class StaticChecker(BaseVisitor):
             if body.is_func and isinstance(body.restype, Unknown):
                 body.restype = FloatType()
                 self.type_infer_func(ast.body.name, o, body)
-            if not isinstance(body.restype, FloatType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.body, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.body, o).type_infer_error:
+                return MType(None, None, FloatType(), True)
             return MType(None, None, FloatType())
         elif op in ["!"]:
             # Id
@@ -269,7 +284,9 @@ class StaticChecker(BaseVisitor):
             if body.is_func and isinstance(body.restype, Unknown):
                 body.restype = BoolType()
                 self.type_infer_func(ast.body.name, o, body)
-            if not isinstance(body.restype, BoolType): raise TypeMismatchInExpression(ast)
+            if not isinstance(self.visit(ast.body, o).restype, BoolType): raise TypeMismatchInExpression(ast)
+            if self.visit(ast.body, o).type_infer_error:
+                return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
 
     # Visit Call expression
@@ -278,6 +295,7 @@ class StaticChecker(BaseVisitor):
         param_type = []
         args_type = []
         rtn_type = None
+        type_infer_error = False
         for env in o:
             if ast.method.name in env and env[ast.method.name].is_func:
                 is_function = True
@@ -297,7 +315,8 @@ class StaticChecker(BaseVisitor):
         for i in range(len(param_type)):
             # If there is exists at least one type-unresolved parameter, raise TypeCannotBeInferred() for call statement
             if isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
-                raise TypeCannotBeInferred(ast)
+                # raise TypeCannotBeInferred(ast)
+                type_infer_error = True
             # Param type infer
             elif not isinstance(args_type[i].restype, Unknown) and isinstance(param_type[i], Unknown):
                 param_type[i] = args_type[i]
@@ -314,7 +333,11 @@ class StaticChecker(BaseVisitor):
                 if ast.method.name in env and env[ast.method.name].is_func:
                     env[ast.method.name].intype = param_type
                     break
-        return rtn_type
+        if type_infer_error:
+            rtn_type.type_infer_error = True
+            return rtn_type
+        else:
+            return rtn_type
 
     """
     LITERALS
@@ -377,6 +400,8 @@ class StaticChecker(BaseVisitor):
             # Both sides can not be resolve -> raise exception
             if isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
                 raise TypeCannotBeInferred(ast)
+            elif rhs.type_infer_error:
+                raise TypeCannotBeInferred(ast)
             # Type infer
             elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
                 for env in o:
@@ -397,6 +422,8 @@ class StaticChecker(BaseVisitor):
             rhs = self.visit(ast.rhs, o)
             # Both sides can not be resolve -> raise exception
             if isinstance(lhs.restype.eletype, Unknown) and isinstance(rhs.restype, Unknown):
+                raise TypeCannotBeInferred(ast)
+            elif rhs.type_infer_error:
                 raise TypeCannotBeInferred(ast)
             # Type infer
             elif isinstance(lhs.restype.eletype, Unknown) and not isinstance(rhs.restype, Unknown):
@@ -421,6 +448,8 @@ class StaticChecker(BaseVisitor):
             cond_type = self.visit(if_stmt[0], o)
             if isinstance(cond_type.restype, Unknown):
                 raise TypeCannotBeInferred(ast)
+            elif cond_type.type_infer_error:
+                raise TypeCannotBeInferred(ast)
             if not isinstance(cond_type.restype, BoolType):
                 raise TypeMismatchInStatement(ast)
             for var_decl in if_stmt[1]:
@@ -439,6 +468,8 @@ class StaticChecker(BaseVisitor):
         exp1_type = self.visit(ast.expr1, o)
         if isinstance(exp1_type.restype, Unknown):
             raise TypeCannotBeInferred(ast)
+        elif exp1_type.type_infer_error:
+            raise TypeCannotBeInferred(ast)
         if not isinstance(exp1_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
         local_decl[0][ast.idx1.name] = MType(False, None, exp1_type.restype)
@@ -446,10 +477,14 @@ class StaticChecker(BaseVisitor):
         exp3_type = self.visit(ast.expr3, new_env)
         if isinstance(exp3_type.restype, Unknown):
             raise TypeCannotBeInferred(ast)
+        elif exp3_type.type_infer_error:
+            raise TypeCannotBeInferred(ast)
         if not isinstance(exp3_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
         exp2_type = self.visit(ast.expr2, new_env)
         if isinstance(exp2_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
+        elif exp2_type.type_infer_error:
             raise TypeCannotBeInferred(ast)
         if not isinstance(exp2_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
@@ -473,14 +508,22 @@ class StaticChecker(BaseVisitor):
     # Visit Return statement
     def visitReturn(self, ast, o):
         if ast.expr is not None:
-            rtn_type = self.visit(ast.expr, o).restype
-            return rtn_type
+            rtn_type = self.visit(ast.expr, o)
+            if isinstance(rtn_type.restype, Unknown):
+                raise TypeCannotBeInferred(ast)
+            elif rtn_type.type_infer_error:
+                raise TypeCannotBeInferred(ast)
+            return rtn_type.restype
         return VoidType()
 
     # Visit DoWhile statement
     def visitDowhile(self, ast, o):
         rtn_type = None
         cond_type = self.visit(ast.exp, o)
+        if isinstance(cond_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
+        elif cond_type.type_infer_error:
+            raise TypeCannotBeInferred(ast)
         if not isinstance(cond_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
         local_decl = [dict()]
@@ -497,6 +540,10 @@ class StaticChecker(BaseVisitor):
     def visitWhile(self, ast, o):
         rtn_type = None
         cond_type = self.visit(ast.exp, o)
+        if isinstance(cond_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
+        elif cond_type.type_infer_error:
+            raise TypeCannotBeInferred(ast)
         if not isinstance(cond_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
         local_decl = [dict()]

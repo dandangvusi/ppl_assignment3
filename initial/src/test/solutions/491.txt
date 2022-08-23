@@ -1,0 +1,1 @@
+Type Cannot Be Inferred: While(Id(y),[VarDecl(Id(y),IntLiteral(5))],[Assign(Id(x),BinaryOp(+,Id(x),Id(y))),If(BinaryOp(>=,Id(x),IntLiteral(50)),[],[Break()])Else([],[])])

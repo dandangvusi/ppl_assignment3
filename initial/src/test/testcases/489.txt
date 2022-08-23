@@ -1,0 +1,13 @@
+
+                Function: foo
+                    Parameter: n
+                    Body:
+                        Var: x;
+                        Return x;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5;
+                        foo(x);
+                    EndBody.
+                

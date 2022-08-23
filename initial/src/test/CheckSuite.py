@@ -935,3 +935,74 @@ class CheckSuite(unittest.TestCase):
                 ([],
                 [If([(BinaryOp(">",Id("i"),IntLiteral(5)),[],[Break()])],([],[])),CallStmt(Id("print"),[Id("i")])]))))
         self.assertTrue(TestChecker.test(input, expect, 488))
+
+    def test_89(self):
+        """Test type cannot be inferred (return statement)"""
+        input = """
+                Function: foo
+                    Parameter: n
+                    Body:
+                        Var: x;
+                        Return x;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5;
+                        foo(x);
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(Return(Id("x"))))
+        self.assertTrue(TestChecker.test(input, expect, 489))
+
+    def test_90(self):
+        """Test type cannot be inferred (Do-while statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x = 5, y;
+                        Do
+                            x = x + 1;
+                        While y
+                        EndDo.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(Dowhile(([],[Assign(Id("x"),BinaryOp("+",Id("x"),IntLiteral(1)))]),Id("y"))))
+        self.assertTrue(TestChecker.test(input, expect, 490))
+
+    def test_91(self):
+        """Test type cannot be inferred (while statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x = 5, y;
+                        While y Do
+                            Var: y = 5;
+                            x = x + y;
+                            If x >= 50 Then
+                                Break;
+                            EndIf.
+                        EndWhile.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(While(Id("y"),(
+                [VarDecl(Id("y"),[],IntLiteral(5))],
+                [Assign(Id("x"),BinaryOp("+",Id("x"),Id("y"))),
+                 If([(BinaryOp(">=",Id("x"),IntLiteral(50)),[],[Break()])],([],[]))]))))
+        self.assertTrue(TestChecker.test(input, expect, 491))
+
+    def test_92(self):
+        """Test type cannot be inferred (while statement)"""
+        input = """
+                Function: foo
+                    Parameter: n
+                    Body:
+                        Return 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x, y, a = 1;
+                        y = a + foo(x);
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(Assign(Id("y"), BinaryOp("+", Id("a"), CallExpr(Id("foo"),[Id("x")])))))
+        self.assertTrue(TestChecker.test(input, expect, 492))

@@ -1,0 +1,1 @@
+Type Cannot Be Inferred: Dowhile([],[Assign(Id(x),BinaryOp(+,Id(x),IntLiteral(1)))],Id(y))
