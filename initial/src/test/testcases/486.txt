@@ -1,0 +1,13 @@
+
+                Function: main
+                    Body:
+                        Var: x;
+                        If False Then
+                            printStr("if statement");
+                        ElseIf x Then
+                            printStr("else if statement");
+                        Else
+                            printStr("else statement");
+                        EndIf.
+                    EndBody.
+                

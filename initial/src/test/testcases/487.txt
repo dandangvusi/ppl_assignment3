@@ -1,0 +1,12 @@
+
+                Function: main
+                    Body:
+                        Var: x;
+                        For (i = x, i < 10, 1) Do
+                            If i > 5 Then
+                                Break;
+                            EndIf.
+                            print(i);
+                        EndFor.
+                    EndBody.
+                

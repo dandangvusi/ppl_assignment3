@@ -1,0 +1,1 @@
+Type Cannot Be Inferred: For(Id(i),Id(x),BinaryOp(<,Id(i),IntLiteral(10)),IntLiteral(1),[],[If(BinaryOp(>,Id(i),IntLiteral(5)),[],[Break()])Else([],[]),CallStmt(Id(print),[Id(i)])])

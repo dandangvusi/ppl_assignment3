@@ -437,14 +437,20 @@ class StaticChecker(BaseVisitor):
         local_decl = [dict()]
         rtn_type = None
         exp1_type = self.visit(ast.expr1, o)
+        if isinstance(exp1_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
         if not isinstance(exp1_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
         local_decl[0][ast.idx1.name] = MType(False, None, exp1_type.restype)
         new_env = local_decl + o
         exp3_type = self.visit(ast.expr3, new_env)
+        if isinstance(exp3_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
         if not isinstance(exp3_type.restype, IntType):
             raise TypeMismatchInStatement(ast)
         exp2_type = self.visit(ast.expr2, new_env)
+        if isinstance(exp2_type.restype, Unknown):
+            raise TypeCannotBeInferred(ast)
         if not isinstance(exp2_type.restype, BoolType):
             raise TypeMismatchInStatement(ast)
         for var_decl in ast.loop[0]:

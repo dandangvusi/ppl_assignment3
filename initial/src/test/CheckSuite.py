@@ -877,3 +877,61 @@ class CheckSuite(unittest.TestCase):
         expect = str(TypeCannotBeInferred(If([(Id("x"),[],[CallStmt(Id("printStr"),[StringLiteral("if statement")])])],
                 ([],[CallStmt(Id("printStr"),[StringLiteral("else statement")])]))))
         self.assertTrue(TestChecker.test(input, expect, 485))
+
+    def test_86(self):
+        """Test type cannot be inferred (if statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x;
+                        If False Then
+                            printStr("if statement");
+                        ElseIf x Then
+                            printStr("else if statement");
+                        Else
+                            printStr("else statement");
+                        EndIf.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(If([(BooleanLiteral(False),[],[CallStmt(Id("printStr"),[StringLiteral("if statement")])]),
+                                              (Id("x"),[],[CallStmt(Id("printStr"),[StringLiteral("else if statement")])])],
+                ([],[CallStmt(Id("printStr"),[StringLiteral("else statement")])]))))
+        self.assertTrue(TestChecker.test(input, expect, 486))
+
+    def test_87(self):
+        """Test type cannot be inferred (for statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x;
+                        For (i = x, i < 10, 1) Do
+                            If i > 5 Then
+                                Break;
+                            EndIf.
+                            print(i);
+                        EndFor.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(For(Id("i"),Id("x"),BinaryOp("<",Id("i"),IntLiteral(10)),IntLiteral(1),
+                ([],
+                [If([(BinaryOp(">",Id("i"),IntLiteral(5)),[],[Break()])],([],[])),CallStmt(Id("print"),[Id("i")])]))))
+        self.assertTrue(TestChecker.test(input, expect, 487))
+
+    def test_88(self):
+        """Test type cannot be inferred (for statement)"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x;
+                        For (i = 0, i < 10, x) Do
+                            If i > 5 Then
+                                Break;
+                            EndIf.
+                            print(i);
+                        EndFor.
+                    EndBody.
+                """
+        expect = str(TypeCannotBeInferred(For(Id("i"),IntLiteral(0),BinaryOp("<",Id("i"),IntLiteral(10)),Id("x"),
+                ([],
+                [If([(BinaryOp(">",Id("i"),IntLiteral(5)),[],[Break()])],([],[])),CallStmt(Id("print"),[Id("i")])]))))
+        self.assertTrue(TestChecker.test(input, expect, 488))
