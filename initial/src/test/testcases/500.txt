@@ -1,0 +1,13 @@
+
+                Function: foo
+                    Body:
+                        Var: res[3] = {1, 2, 3};
+                        Return res;
+                    EndBody.
+                Function: foo1
+                    Body:
+                        Var: x, y;
+                        x = foo();
+                        y = x[0] * 2;
+                    EndBody.
+                

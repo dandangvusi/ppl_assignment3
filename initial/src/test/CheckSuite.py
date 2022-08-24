@@ -1006,3 +1006,137 @@ class CheckSuite(unittest.TestCase):
                 """
         expect = str(TypeCannotBeInferred(Assign(Id("y"), BinaryOp("+", Id("a"), CallExpr(Id("foo"),[Id("x")])))))
         self.assertTrue(TestChecker.test(input, expect, 492))
+
+    def test_93(self):
+        """Test type inferre"""
+        input = """
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x = 5, y, z;
+                        y = add_one(x);
+                        z = y;
+                        z = -.z;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(UnaryOp("-.", Id("z"))))
+        self.assertTrue(TestChecker.test(input, expect, 493))
+
+    def test_94(self):
+        """Test type inferre"""
+        input = """
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: arr[3], x = 5, y = 2.0;
+                        arr[0] = x;
+                        arr[1] = add_one(x);
+                        arr[2] = y;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInStatement(Assign(ArrayCell(Id("arr"),[IntLiteral(2)]), Id("y"))))
+        self.assertTrue(TestChecker.test(input, expect, 494))
+
+    def test_95(self):
+        """Test type inferre"""
+        input = """
+                Var: x;
+                Function: fact
+                    Parameter: n
+                    Body:
+                        If n==0 Then
+                            Return 1;
+                        Else
+                            Return n*fact(n-1);
+                        EndIf.
+                    EndBody.
+                Function: main
+                    Body:
+                        x = fact(10);
+                        x = !x;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(UnaryOp("!", Id("x"))))
+        self.assertTrue(TestChecker.test(input, expect, 495))
+
+    def test_96(self):
+        """Test type inferre"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x, y, z, t;
+                        x = y + z;
+                        t = x *. z;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("*.", Id("x"), Id("z"))))
+        self.assertTrue(TestChecker.test(input, expect, 496))
+
+    def test_97(self):
+        """Test type inferre"""
+        input = """
+                Function: main
+                    Body:
+                        Var: x, y, z, t;
+                        x = y -. z;
+                        t = ---y;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(UnaryOp("-", Id("y"))))
+        self.assertTrue(TestChecker.test(input, expect, 497))
+
+    def test_98(self):
+        """Test type inferre"""
+        input = """
+            Function: main
+                Body:
+                    Var: arr[3], x = 5, y = 2.0;
+                    arr[y] = x;
+                EndBody.
+            """
+        expect = str(TypeMismatchInExpression(ArrayCell(Id("arr"), [Id("y")])))
+        self.assertTrue(TestChecker.test(input, expect, 498))
+
+    def test_99(self):
+        """Test type inferre"""
+        input = """
+                Function: foo
+                    Body:
+                        Var: res[3] = {1, 2, 3};
+                        Return res;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: x, y;
+                        x = foo();
+                        y = x[0] *. 2.5;
+                    EndBody.
+                """
+        expect = str(TypeMismatchInExpression(BinaryOp("*.", ArrayCell(Id("x"), [IntLiteral(0)]), FloatLiteral(2.5))))
+        self.assertTrue(TestChecker.test(input, expect, 499))
+
+    def test_100(self):
+        """Test type inferre"""
+        input = """
+                Function: foo
+                    Body:
+                        Var: res[3] = {1, 2, 3};
+                        Return res;
+                    EndBody.
+                Function: foo1
+                    Body:
+                        Var: x, y;
+                        x = foo();
+                        y = x[0] * 2;
+                    EndBody.
+                """
+        expect = str(NoEntryPoint())
+        self.assertTrue(TestChecker.test(input, expect, 500))

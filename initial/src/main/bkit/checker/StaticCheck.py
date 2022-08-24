@@ -181,8 +181,14 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = IntType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
-            if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.left, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.left, o).restype.eletype, IntType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.right, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.right, o).restype.eletype, IntType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
             if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
                 return MType(None, None, IntType(), True)
             return MType(None, None, IntType())
@@ -197,8 +203,14 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = FloatType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
-            if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.left, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.left, o).restype.eletype, FloatType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.right, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.right, o).restype.eletype, FloatType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
                 return MType(None, None, FloatType(), True)
             return MType(None, None, FloatType())
@@ -213,8 +225,14 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = IntType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
-            if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.left, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.left, o).restype.eletype, IntType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.left, o).restype, IntType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.right, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.right, o).restype.eletype, IntType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.right, o).restype, IntType): raise TypeMismatchInExpression(ast)
             if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
                 return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
@@ -229,8 +247,14 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = FloatType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
-            if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.left, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.left, o).restype.eletype, FloatType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.left, o).restype, FloatType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.right, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.right, o).restype.eletype, FloatType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.right, o).restype, FloatType): raise TypeMismatchInExpression(ast)
             if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
                 return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
@@ -245,8 +269,14 @@ class StaticChecker(BaseVisitor):
             if right.is_func and isinstance(right.restype, Unknown):
                 right.restype = BoolType()
                 self.type_infer_func(ast.right.name, o, right)
-            if not isinstance(self.visit(ast.left, o).restype, BoolType): raise TypeMismatchInExpression(ast)
-            if not isinstance(self.visit(ast.right, o).restype, BoolType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.left, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.left, o).restype.eletype, BoolType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.left, o).restype, BoolType): raise TypeMismatchInExpression(ast)
+            if isinstance(self.visit(ast.right, o).restype, ArrayType):
+                if not isinstance(self.visit(ast.right, o).restype.eletype, BoolType): raise TypeMismatchInExpression(ast)
+            else:
+                if not isinstance(self.visit(ast.right, o).restype, BoolType): raise TypeMismatchInExpression(ast)
             if self.visit(ast.left, o).type_infer_error or self.visit(ast.right, o).type_infer_error:
                 return MType(None, None, BoolType(), True)
             return MType(None, None, BoolType())
@@ -405,13 +435,13 @@ class StaticChecker(BaseVisitor):
             # Type infer
             elif isinstance(lhs.restype, Unknown) and not isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.lhs.name in env:
-                        env[ast.lhs.name] = rhs
+                    if ast.lhs.name in env and not env[ast.lhs.name].is_func:
+                        env[ast.lhs.name].restype = rhs.restype
                         break
             elif not isinstance(lhs.restype, Unknown) and isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.rhs.name in env:
-                        env[ast.rhs.name] = lhs
+                    if ast.rhs.name in env and not env[ast.rhs.name].is_func:
+                        env[ast.rhs.name].restype = lhs.restype
                         break
             # Both sides must be the same in type
             elif type(lhs.restype) is not type(rhs.restype):
@@ -428,13 +458,13 @@ class StaticChecker(BaseVisitor):
             # Type infer
             elif isinstance(lhs.restype.eletype, Unknown) and not isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.lhs.name in env:
-                        env[ast.lhs.name].restype.eletype = rhs
+                    if ast.lhs.arr.name in env and not env[ast.lhs.arr.name].is_func:
+                        env[ast.lhs.arr.name].restype.eletype = rhs.restype
                         break
             elif not isinstance(lhs.restype.eletype, Unknown) and isinstance(rhs.restype, Unknown):
                 for env in o:
-                    if ast.rhs.name in env:
-                        env[ast.rhs.name] = lhs.restype.eletype
+                    if ast.rhs.name in env and not env[ast.rhs.name].is_func:
+                        env[ast.rhs.name].restype = lhs.restype.eletype
                         break
             # Both sides must be the same in type
             elif type(lhs.restype.eletype) is not type(rhs.restype):

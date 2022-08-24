@@ -1,0 +1,14 @@
+
+                Function: add_one
+                    Parameter: n
+                    Body:
+                        Return n + 1;
+                    EndBody.
+                Function: main
+                    Body:
+                        Var: arr[3], x = 5, y = 2.0;
+                        arr[0] = x;
+                        arr[1] = add_one(x);
+                        arr[2] = y;
+                    EndBody.
+                
